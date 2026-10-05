@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCustomerOrders, getOrderItems } from "../services/orderService.js";
 import { useAuth } from "../auth/authContext.js";
@@ -100,17 +101,17 @@ function OrderList() {
     return (
         <section
             id="orders"
-            className="mt-10 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+            className="panel p-6 sm:p-8"
         >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+                    <p className="eyebrow">
                         Your purchases
                     </p>
 
-                    <h2 className="mt-1 text-2xl font-extrabold text-slate-900">
+                    <h1 className="mt-2 text-3xl font-bold text-slate-900">
                         My Orders
-                    </h2>
+                    </h1>
 
                     <p className="mt-1 text-sm text-slate-500">
                         View your previous orders and their current status.
@@ -120,7 +121,7 @@ function OrderList() {
                 <button
                     type="button"
                     onClick={fetchOrders}
-                    className="rounded-md bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600"
+                    className="btn-outline"
                 >
                     Refresh Orders
                 </button>
@@ -147,6 +148,7 @@ function OrderList() {
                     <p className="mt-1 text-sm text-slate-500">
                         Orders will appear here after you complete checkout.
                     </p>
+                    <Link to="/products" className="btn-primary mt-6">Browse products</Link>
                 </div>
             )}
 
@@ -169,7 +171,7 @@ function OrderList() {
                                 </div>
 
                                 <span
-                                    className={`w-fit rounded-full px-3 py-1 text-xs font-extrabold ${getStatusClasses(
+                                    className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${getStatusClasses(
                                         order.status
                                     )}`}
                                 >
@@ -182,7 +184,7 @@ function OrderList() {
                   Total
                 </span>
 
-                                <span className="text-lg font-extrabold text-slate-900">
+                                <span className="text-lg font-bold text-slate-900">
                   Rs. {Number(order.totalAmount || 0).toFixed(2)}
                 </span>
                             </div>

@@ -9,3 +9,8 @@ spring.datasource.password=YOUR_MYSQL_PASSWORD
 # store.google.client-secret=your-client-secret
 # store.google.redirect-uri=http://localhost:8081/login/oauth2/code/google
 # store.google.frontend-url=http://localhost:5173
+
+# Brevo SMTP (SMTP key, not API key); enter real values only in the ignored local file.
+spring.mail.username=YOUR_BREVO_SMTP_LOGIN
+spring.mail.password=YOUR_BREVO_SMTP_KEY
+store.mail.from=YOUR_VERIFIED_SENDER_EMAIL

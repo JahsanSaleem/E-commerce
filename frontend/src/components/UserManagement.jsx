@@ -32,7 +32,7 @@ export default function UserManagement() {
   const errors = create.error?.response?.data ?? {};
   const change = (event) => setForm({ ...form, [event.target.name]: event.target.value });
   return <section className="space-y-6">
-    <div><p className="eyebrow">Store management</p><h1 className="mt-2 text-3xl font-extrabold">User Management</h1><p className="mt-2 text-slate-500">Create staff accounts and review store users.</p></div>
+    <div><p className="eyebrow">Store management</p><h1 className="mt-2 text-3xl font-bold">User Management</h1><p className="mt-2 text-slate-500">Create staff accounts and review store users.</p></div>
     {message && <p role="status" className="rounded bg-green-50 p-3 text-green-700">{message}</p>}
     <form className="panel space-y-4 p-5" onSubmit={(event) => { event.preventDefault(); setMessage(""); create.mutate({ ...form, name: form.name.trim(), email: form.email.trim() }); }}>
       <h2 className="text-xl font-bold">Create account</h2>

@@ -40,6 +40,7 @@ public class GoogleLoginConfig {
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("email", user.getEmail());
                 session.setAttribute("role", user.getRole());
+        session.setAttribute("credentialVersion", user.getCredentialVersion());
                 response.sendRedirect(frontend + "/login");
             } catch (RuntimeException failure) {
                 String code = "existing-account".equals(failure.getMessage()) ? "existing-account" : "failed";

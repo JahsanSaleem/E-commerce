@@ -4,12 +4,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getProducts, deleteProduct } from "../services/productService.js";
 import { getCategories } from "../services/categoryService.js";
 import ProductImage from "./ProductImage.jsx";
+import Icon from "./Icon.jsx";
 import ProductForm from "./ProductForm.jsx";
 
 const PAGE_SIZE = 9;
 
 export default function ProductBrowser({ management = false }) {
   const client = useQueryClient();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [params, setParams] = useSearchParams();
   const [editor, setEditor] = useState(null);
   const [message, setMessage] = useState("");
@@ -55,9 +57,9 @@ export default function ProductBrowser({ management = false }) {
   }
 
   return <div className="space-y-6">
-    <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="catalogue-heading flex flex-wrap items-center justify-between gap-4">
       <div><p className="eyebrow">{management ? "Store management" : "Explore the catalogue"}</p>
-        <h1 className="mt-2 text-3xl font-extrabold">{management ? "Product Management" : "Our Products"}</h1>
+        <h1 className="mt-2 text-3xl font-bold">{management ? "Product Management" : "Our Products"}</h1>
         <p className="mt-2 text-slate-500">{management ? "Create and maintain your product catalogue." : "Find tools, electronics and supplies for your next project."}</p></div>
       <div className="flex gap-2"><button className="btn-outline" disabled={products.isFetching} onClick={() => products.refetch()}>{products.isFetching ? "Loading…" : "Refresh"}</button>
         {management && <button className="btn-primary" disabled={editor !== null || remove.isPending} onClick={() => { setMessage(""); remove.reset(); setEditor({}); }}>+ Add Product</button>}</div>
@@ -65,9 +67,10 @@ export default function ProductBrowser({ management = false }) {
     {message && <p role="status" className="rounded bg-green-50 p-3 text-green-700">{message}</p>}
     {remove.isError && <p role="alert" className="rounded bg-red-50 p-3 text-red-700">{remove.error.response?.data?.message || "Unable to delete the product. It may be referenced by a cart or order."}</p>}
     {editor && <ProductForm key={editor.productId ?? "new"} product={editor.productId ? editor : null} onClose={() => setEditor(null)} onSaved={setMessage} />}
-    <div className="grid gap-6 lg:grid-cols-[230px_1fr]">
-      <aside className="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 font-bold">Filters</h2>
+    <div className="catalogue-layout grid gap-6 lg:grid-cols-[230px_1fr]">
+      <aside className={`filter-panel h-fit ${filtersOpen ? "is-open" : ""}`}>
+        <div className="filter-title"><h2><Icon name="filter" />Filters</h2><button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="filter-content" onClick={() => setFiltersOpen(!filtersOpen)}>{filtersOpen ? "Hide filters" : "Show filters"}</button></div>
+        <div id="filter-content" className="filter-content">
         <label className="field-label" htmlFor="product-search">Search products</label>
         <input id="product-search" className="field-input" value={search} onChange={(e) => filter("search", e.target.value)} placeholder="Name or description" />
         <label className="field-label mt-4" htmlFor="category-filter">Category</label>
@@ -88,9 +91,10 @@ export default function ProductBrowser({ management = false }) {
         </div>
         {invalidRange && <p role="alert" className="field-error">Minimum price must not exceed maximum.</p>}
         <button className="mt-5 text-sm font-semibold text-orange-700 hover:underline" onClick={() => setParams({})}>Clear filters</button>
+        </div>
       </aside>
       <div className="min-w-0">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+        <div className="catalogue-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
           <span role="status">{products.isSuccess ? visible.length ? `Showing ${start + 1}–${start + pageProducts.length} of ${visible.length} products` : "0 products" : "Catalogue"}</span>
           <label className="flex items-center gap-2">Sort by<select className="rounded border border-slate-200 bg-white p-2" value={sort} onChange={(e) => filter("sort", e.target.value)}><option value="name">Name</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
         </div>
@@ -98,10 +102,14 @@ export default function ProductBrowser({ management = false }) {
           <div className="panel overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b bg-slate-50 text-slate-500"><tr>{["Product", "Category", "Price", "Stock", "Actions"].map((title) => <th key={title} scope="col" className="p-4">{title}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">
             {pageProducts.map((product) => <tr key={product.productId} className="hover:bg-slate-50"><td className="p-4"><Link className="font-bold hover:text-orange-700" to={`/products/${product.productId}`}>{product.name}</Link><p className="mt-1 max-w-xs truncate text-slate-500">{product.description || "—"}</p></td><td className="p-4">{product.category?.name}</td><td className="whitespace-nowrap p-4">Rs. {Number(product.price).toLocaleString("en-LK", { minimumFractionDigits: 2 })}</td><td className={`whitespace-nowrap p-4 font-semibold ${Number(product.quantity ?? 0) > 0 ? "text-green-700" : "text-red-700"}`}>{Number(product.quantity ?? 0) > 0 ? `${product.quantity} in stock` : "Out of stock"}</td><td className="p-4"><div className="flex gap-2"><button className="btn-outline" disabled={editor !== null || remove.isPending} onClick={() => { setMessage(""); remove.reset(); setEditor(product); }}>Edit</button><button className="btn-danger" disabled={editor !== null || remove.isPending} onClick={() => { if (window.confirm(`Permanently delete "${product.name}"?`)) { setMessage(""); remove.mutate(product.productId); } }}>{remove.isPending && remove.variables === product.productId ? "Deleting…" : "Delete"}</button></div></td></tr>)}
           </tbody></table></div>
-        ) : <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{pageProducts.map((product) => <article key={product.productId} className="panel overflow-hidden transition-shadow hover:shadow-md"><Link to={`/products/${product.productId}`}><ProductImage product={product} className="h-48 w-full p-5" /></Link><div className="p-5"><p className="text-xs font-bold uppercase tracking-wide text-orange-700">{product.category?.name}</p><h2 className="mt-2 text-lg font-bold"><Link to={`/products/${product.productId}`}>{product.name}</Link></h2><p className="mt-2 line-clamp-2 text-sm text-slate-500">{product.description || "View product details."}</p><p className="mt-4 text-lg font-extrabold">Rs. {Number(product.price).toLocaleString("en-LK", { minimumFractionDigits: 2 })}</p><p className={`mt-2 text-sm font-semibold ${Number(product.quantity ?? 0) > 0 ? "text-green-700" : "text-red-700"}`}>{Number(product.quantity ?? 0) > 0 ? `${product.quantity} in stock` : "Out of stock"}</p><Link className="btn-primary mt-4 block text-center" to={`/products/${product.productId}`}>View Details</Link></div></article>)}</div>}
-        {products.isSuccess && visible.length > 0 && <nav aria-label="Product pages" className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        ) : <div className="product-grid grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{pageProducts.map((product) => <article key={product.productId} className="product-card">
+          <Link className="product-photo" to={`/products/${product.productId}`} aria-label={`View ${product.name}`}><ProductImage product={product} className="h-48 w-full p-5" /><span className={`stock-badge ${Number(product.quantity ?? 0) > 0 ? "" : "is-out"}`}>{Number(product.quantity ?? 0) > 0 ? "In stock" : "Out of stock"}</span></Link>
+          <div className="product-card-body"><p className="eyebrow">{product.category?.name}</p><h2><Link to={`/products/${product.productId}`}>{product.name}</Link></h2><p className="product-description line-clamp-2">{product.description || "View product details."}</p>
+            <div className="product-card-bottom"><div><p className="product-price">Rs. {Number(product.price).toLocaleString("en-LK", { minimumFractionDigits: 2 })}</p><p className="product-stock">{Number(product.quantity ?? 0) > 0 ? `${product.quantity} available` : "Currently unavailable"}</p></div><Link className="product-link" to={`/products/${product.productId}`}>View Details <Icon name="arrow" /></Link></div>
+          </div></article>)}</div>}
+        {products.isSuccess && visible.length > 0 && <nav aria-label="Product pages" className="pagination mt-6 flex flex-wrap items-center justify-between gap-3">
           <button className="btn-outline" disabled={page === 1} onClick={() => changePage(page - 1)}>Previous</button>
-          <span className="text-sm text-slate-500">Page {page} of {pageCount}</span>
+          <span className="page-position text-sm text-slate-500">Page <strong>{page}</strong> of {pageCount}</span>
           <button className="btn-outline" disabled={page === pageCount} onClick={() => changePage(page + 1)}>Next</button>
         </nav>}
       </div>

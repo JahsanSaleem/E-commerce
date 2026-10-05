@@ -52,7 +52,7 @@ export default function AdminOrders() {
     enabled: mode === "status" || Boolean(customerId),
   });
   return <section className="space-y-6">
-    <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Store management</p><h1 className="mt-2 text-3xl font-extrabold">Order Management</h1><p className="mt-2 text-slate-500">Review customer purchases and update their status.</p></div><button className="btn-outline" disabled={orders.isFetching || (mode === "customer" && !customerId)} onClick={() => orders.refetch()}>Refresh</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow">Store management</p><h1 className="mt-2 text-3xl font-bold">Order Management</h1><p className="mt-2 text-slate-500">Review customer purchases and update their status.</p></div><button className="btn-outline" disabled={orders.isFetching || (mode === "customer" && !customerId)} onClick={() => orders.refetch()}>Refresh</button></div>
     {message && <p role="status" className="rounded bg-green-50 p-3 text-green-700">{message}</p>}
     <div className="panel flex flex-wrap items-end gap-4 p-5">
       <div><label className="field-label" htmlFor="order-mode">Find orders by</label><select id="order-mode" className="field-input" value={mode} onChange={(event) => setMode(event.target.value)}><option value="status">Status</option><option value="customer">Customer ID</option></select></div>

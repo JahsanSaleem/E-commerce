@@ -22,6 +22,12 @@ public class SessionRefreshInterceptor implements HandlerInterceptor {
                 session.invalidate();
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account no longer exists. Please login again.");
             }
+            Object savedVersion = session.getAttribute("credentialVersion");
+            long version = savedVersion instanceof Number number ? number.longValue() : 0;
+            if (version != user.getCredentialVersion()) {
+                session.invalidate();
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password changed. Please sign in again.");
+            }
             session.setAttribute("role", user.getRole());
             session.setAttribute("email", user.getEmail());
         }

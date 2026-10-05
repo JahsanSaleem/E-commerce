@@ -41,9 +41,12 @@ export function AuthProvider({ children }) {
         return authenticatedUser;
       },
       async register(details) {
-        const registeredUser = await authService.register(details);
-        setUser(registeredUser);
-        return registeredUser;
+        return authService.register(details);
+      },
+      async verifyRegistration(details) {
+        const verifiedUser = await authService.verifyRegistration(details);
+        setUser(verifiedUser);
+        return verifiedUser;
       },
       async logout() {
         await authService.logout();

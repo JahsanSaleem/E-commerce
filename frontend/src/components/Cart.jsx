@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom"
+import Icon from "./Icon.jsx"
 import { useEffect, useRef, useState } from 'react'
 import {
     checkoutCart,
@@ -126,7 +128,7 @@ function Cart() {
 
     if (loading) {
         return (
-            <section className="mt-10 rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="panel p-8">
                 <p className="text-sm text-slate-500">Loading cart...</p>
             </section>
         )
@@ -134,7 +136,7 @@ function Cart() {
 
     if (error && !cart) {
         return (
-            <section className="mt-10 rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="panel p-8">
                 <p className="font-semibold text-red-600">{error}</p>
             </section>
         )
@@ -145,16 +147,16 @@ function Cart() {
     return (
         <section
             id="cart"
-            className="mt-10"
+            className="cart-page"
         >
-            <div className="mb-6">
-                <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
-                    Member 2 Component
+            <div className="catalogue-heading mb-6">
+                <p className="eyebrow">
+                    Your project essentials
                 </p>
 
-                <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">
+                <h1 className="mt-2 text-3xl font-bold text-slate-900">
                     Shopping Cart
-                </h2>
+                </h1>
 
                 <p className="mt-2 text-slate-500">
                     Review your selected hardware items before checkout.
@@ -174,9 +176,9 @@ function Cart() {
             )}
 
             {items.length === 0 ? (
-                <article className="rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 font-extrabold text-orange-600">
-                        C
+                <article className="panel empty-state p-10 text-center">
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-600">
+                        <Icon name="cart" />
                     </div>
 
                     <h3 className="text-xl font-bold text-slate-900">
@@ -186,10 +188,11 @@ function Cart() {
                     <p className="mt-2 text-sm text-slate-500">
                         Add products to your cart to continue shopping.
                     </p>
+                    <Link to="/products" className="btn-primary mt-6">Explore products <Icon name="arrow" /></Link>
                 </article>
             ) : (
                 <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-                    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                    <article className="panel overflow-hidden">
                         <div className="border-b border-slate-200 px-6 py-4">
                             <h3 className="font-bold text-slate-900">
                                 Cart Items
@@ -284,7 +287,7 @@ function Cart() {
                         </div>
                     </article>
 
-                    <aside className="h-fit rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                    <aside className="panel h-fit p-6">
                         <h3 className="text-xl font-bold text-slate-900">
                             Order Summary
                         </h3>
@@ -304,7 +307,7 @@ function Cart() {
                                 Total
                             </span>
 
-                            <span className="text-xl font-extrabold text-orange-600">
+                            <span className="text-xl font-bold text-orange-600">
                                 Rs.{' '}
                                 {Number(cart?.totalAmount ?? 0).toFixed(2)}
                             </span>
@@ -314,7 +317,7 @@ function Cart() {
                             type="button"
                             disabled={busy}
                             onClick={checkout}
-                            className="mt-6 w-full rounded-md bg-orange-600 px-4 py-3 text-sm font-bold text-white hover:bg-orange-700"
+                            className="btn-primary mt-6 w-full py-3"
                         >
                             {busy ? "Please wait…" : "Proceed to Checkout"}
                         </button>

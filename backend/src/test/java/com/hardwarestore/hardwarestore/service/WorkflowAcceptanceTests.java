@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WorkflowAcceptanceTests {
     @Autowired WebApplicationContext context;
     @Autowired UserRepository users;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean VerificationMailer mail;
     MockMvc mvc;
     @BeforeEach void setup() { mvc=MockMvcBuilders.webAppContextSetup(context).build(); }
     MockHttpSession session(Role role) {
@@ -46,8 +47,16 @@ class WorkflowAcceptanceTests {
         mvc.perform(get("/api/orders/customer/"+id).session(one)).andExpect(status().isUnauthorized());
     }
     @Test void registrationCannotAssignAdminAndResponsesExcludePasswords() throws Exception {
-        mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+        var session=new MockHttpSession();
+        var result=mvc.perform(post("/api/auth/register").session(session).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Customer\",\"email\":\""+UUID.randomUUID()+"@example.com\",\"password\":\"Testpass123\",\"role\":\"ADMIN\"}"))
+                .andExpect(status().isAccepted()).andExpect(jsonPath("$.password").doesNotExist()).andReturn();
+        org.junit.jupiter.api.Assertions.assertNull(session.getAttribute("userId"));
+        var code=org.mockito.ArgumentCaptor.forClass(String.class);
+        org.mockito.Mockito.verify(mail).sendCode(org.mockito.ArgumentMatchers.anyString(),code.capture());
+        String id=new tools.jackson.databind.ObjectMapper().readTree(result.getResponse().getContentAsString()).get("registrationId").asText();
+        mvc.perform(post("/api/auth/register/verify").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"registrationId\":\""+id+"\",\"code\":\""+code.getValue()+"\"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.role").value("CUSTOMER"))
                 .andExpect(jsonPath("$.password").doesNotExist());
     }

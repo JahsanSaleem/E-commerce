@@ -1,6 +1,10 @@
 package com.hardwarestore.hardwarestore.controller;
 
 import com.hardwarestore.hardwarestore.dto.LoginRequest;
+import com.hardwarestore.hardwarestore.dto.VerificationRequest;
+import com.hardwarestore.hardwarestore.dto.ResendVerificationRequest;
+import com.hardwarestore.hardwarestore.service.RegistrationVerificationService;
+import com.hardwarestore.hardwarestore.service.RegistrationRateLimiter;
 import com.hardwarestore.hardwarestore.dto.RegisterRequest;
 import com.hardwarestore.hardwarestore.dto.UserResponse;
 import com.hardwarestore.hardwarestore.model.User;
@@ -20,33 +24,26 @@ public class AuthController {
 
     private final UserService userService;
 
-    public AuthController(UserService userService) {
-        this.userService = userService;
+    private final RegistrationVerificationService verification;
+    private final RegistrationRateLimiter rateLimiter;
+    public AuthController(UserService userService, RegistrationVerificationService verification, RegistrationRateLimiter rateLimiter) {
+        this.userService=userService; this.verification=verification; this.rateLimiter=rateLimiter;
     }
-
     @PostMapping("/register")
-    public ResponseEntity<?> register(
-            @Valid @RequestBody RegisterRequest request,
-            HttpSession session, HttpServletRequest httpRequest
-    ) {
-        try {
-            User user = new User();
-            user.setName(request.getName());
-            user.setEmail(request.getEmail());
-            user.setPassword(request.getPassword());
-
-            User savedUser = userService.registerUser(user);
-            httpRequest.changeSessionId();
-            storeUserSession(session, savedUser);
-
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(toUserResponse(savedUser));
-        } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(
-                    Map.of("message", exception.getMessage())
-            );
-        }
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(verification.begin(request));
+    }
+    @PostMapping("/register/resend")
+    public ResponseEntity<?> resend(@Valid @RequestBody ResendVerificationRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(verification.resend(request.registrationId()));
+    }
+    @PostMapping("/register/verify")
+    public ResponseEntity<?> verify(@Valid @RequestBody VerificationRequest request, HttpSession session, HttpServletRequest httpRequest) {
+        User user=verification.verify(request.registrationId(), request.code());
+        httpRequest.changeSessionId(); storeUserSession(session, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toUserResponse(user));
     }
 
     @PostMapping("/login")
@@ -95,6 +92,7 @@ public class AuthController {
         session.setAttribute("userId", user.getId());
         session.setAttribute("email", user.getEmail());
         session.setAttribute("role", user.getRole());
+        session.setAttribute("credentialVersion", user.getCredentialVersion());
     }
 
     private UserResponse toUserResponse(User user) {

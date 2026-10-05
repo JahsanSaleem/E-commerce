@@ -31,6 +31,11 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/login/oauth2/code/google}
       GOOGLE_FRONTEND_URL: ${GOOGLE_FRONTEND_URL:-http://localhost:8080}
+      SMTP_HOST: ${SMTP_HOST:-smtp-relay.brevo.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_LOGIN: ${SMTP_LOGIN:-}
+      SMTP_KEY: ${SMTP_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       BOOTSTRAP_ADMIN_ENABLED: "true"
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@mustafa.com}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?Set a strong INITIAL_ADMIN_PASSWORD in .env}

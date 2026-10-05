@@ -35,6 +35,12 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private long credentialVersion;
+
+    public long getCredentialVersion() { return credentialVersion; }
+    public void setCredentialVersion(long value) { credentialVersion = value; }
+
     public Long getId() {
         return id;
     }

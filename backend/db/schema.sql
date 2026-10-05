@@ -7,6 +7,7 @@ CREATE TABLE `user` (
   `name` varchar(255) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `google_subject` varchar(255) DEFAULT NULL,
+  `credential_version` bigint NOT NULL DEFAULT 0,
   `role` enum('CUSTOMER','STAFF','ADMIN') NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UKob8kqyqqgmefl0aco34akdtpe` (`email`),
@@ -82,3 +83,29 @@ CREATE TABLE `order_items` (
   CONSTRAINT `FKbioxgbv59vetrxe0ejfubep1w` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`),
   CONSTRAINT `FKocimc7dtr037rh4ls4l95nlfi` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+-- Required for existing databases using spring.jpa.hibernate.ddl-auto=validate.
+CREATE TABLE IF NOT EXISTS pending_registration (
+    id VARCHAR(255) NOT NULL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    code_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    last_sent_at DATETIME(6) NOT NULL,
+    attempts INT NOT NULL,
+    send_count INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS password_reset (
+    email VARCHAR(255) NOT NULL PRIMARY KEY,
+    reset_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id BIGINT NULL,
+    password_hash VARCHAR(255) NULL,
+    code_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    last_sent_at DATETIME(6) NOT NULL,
+    attempts INT NOT NULL,
+    send_count INT NOT NULL
+);

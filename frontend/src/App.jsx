@@ -6,6 +6,7 @@ import {
   Link,
   Outlet,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -20,221 +21,105 @@ import ProductDetails from "./components/ProductDetails.jsx";
 import Cart from "./components/Cart.jsx";
 import OrderList from "./components/OrderList.jsx";
 import LoginPage from "./components/LoginPage.jsx";
+import ForgotPasswordPage from "./components/ForgotPasswordPage.jsx";
 import RegisterPage from "./components/RegisterPage.jsx";
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
 import { useAuth } from "./auth/authContext.js";
 
+import StoreFooter from "./components/StoreFooter.jsx";
+import ProductImage from "./components/ProductImage.jsx";
+import Icon from "./components/Icon.jsx";
+import { getProducts } from "./services/productService.js";
 import { getCategories } from "./services/categoryService.js";
 
 function Brand() {
-  return (
-      <Link
-          to="/"
-          className="text-lg font-extrabold tracking-tight"
-      >
-        MUSTAFA{" "}
-        <span className="text-orange-600">HARDWARE</span>
-      </Link>
-  );
+  return <Link to="/" className="brand" aria-label="Mustafa Hardware home">
+    <span className="brand-mark"><Icon name="tools" /></span>
+    <span><span className="brand-name">MUSTAFA<span> HARDWARE</span></span><span className="brand-caption">For every project.</span></span>
+  </Link>;
 }
 
 function Storefront() {
   const { user, logout } = useAuth();
-
-  return (
-      <div className="flex min-h-screen flex-col bg-slate-50">
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-5">
-            <Brand />
-
-            <nav
-                aria-label="Main navigation"
-                className="flex flex-wrap items-center gap-3 text-sm font-semibold"
-            >
-              <NavLink
-                  to="/products"
-                  className={({ isActive }) =>
-                      isActive
-                          ? "text-orange-700"
-                          : "text-slate-600"
-                  }
-              >
-                Products
-              </NavLink>
-
-              <NavLink
-                  to="/cart"
-                  className={({ isActive }) =>
-                      isActive
-                          ? "text-orange-700"
-                          : "text-slate-600"
-                  }
-              >
-                Cart
-              </NavLink>
-
-              <NavLink
-                  to="/orders"
-                  className={({ isActive }) =>
-                      isActive
-                          ? "text-orange-700"
-                          : "text-slate-600"
-                  }
-              >
-                Orders
-              </NavLink>
-
-              {["ADMIN", "STAFF"].includes(user?.role) && (
-                <Link to={user.role === "ADMIN" ? "/admin/products" : "/staff/orders"} className="btn-outline">
-                  Management
-                </Link>
-              )}
-
-              {user ? (
-                <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
-                  <span className="hidden text-slate-500 sm:inline">
-                    Hi, {user.name}
-                  </span>
-                  <button type="button" className="text-slate-600 hover:text-orange-700" onClick={logout}>
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Link to="/login" className="text-slate-600 hover:text-orange-700">Sign In</Link>
-                  <Link to="/register" className="btn-primary">Register</Link>
-                </div>
-              )}
-            </nav>
-          </div>
-        </header>
-
-        <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-10">
-          <Outlet />
-        </main>
-
-        <footer className="mt-10 bg-slate-900 px-5 py-10 text-white">
-          <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-5">
-            <div>
-              <p className="font-bold">MUSTAFA HARDWARE</p>
-
-              <p className="mt-2 text-sm text-slate-400">
-                Tools, electronics and supplies for your next project.
-              </p>
-            </div>
-
-            <Link
-                to="/products"
-                className="text-sm text-slate-300 hover:text-white"
-            >
-              Explore our catalogue →
-            </Link>
-          </div>
-        </footer>
+  const navigate = useNavigate();
+  const departments = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  function searchStore(event) {
+    event.preventDefault();
+    const search = String(new FormData(event.currentTarget).get("search") ?? "").trim();
+    navigate(search ? `/products?${new URLSearchParams({ search })}` : "/products");
+  }
+  return <div className="storefront flex min-h-screen flex-col">
+    <a href="#main-content" className="skip-link">Skip to content</a>
+    <div className="utility-bar"><div className="site-width"><span>Tools, hardware & electronics</span><span className="hidden sm:inline">Mustafa Hardware online store</span></div></div>
+    <header className="store-header">
+      <div className="site-width header-inner">
+        <Brand />
+        <form className="store-search" role="search" onSubmit={searchStore}>
+          <label htmlFor="store-search" className="sr-only">Search the store</label>
+          <input id="store-search" name="search" type="search" placeholder="Search tools, hardware and electronics" />
+          <button type="submit" aria-label="Search products"><Icon name="search" /></button>
+        </form>
+        <div className="account-nav">
+          {user ? <><span className="hidden text-sm text-slate-500 sm:inline">Hi, {user.name}</span><button type="button" className="btn-outline" onClick={logout}>Sign Out</button></>
+            : <><Link to="/login" className="nav-item">Sign In</Link><Link to="/register" className="btn-primary">Register <Icon name="arrow" /></Link></>}
+        </div>
       </div>
-  );
+      <div className="store-navigation"><div className="site-width navigation-inner">
+        <nav aria-label="Main navigation" className="store-nav">
+          <NavLink to="/products" className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`}>Products</NavLink>
+          <NavLink to="/cart" className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`}><Icon name="cart" />Cart</NavLink>
+          <NavLink to="/orders" className={({ isActive }) => `nav-item ${isActive ? "is-active" : ""}`}>Orders</NavLink>
+          {["ADMIN", "STAFF"].includes(user?.role) && <Link to={user.role === "ADMIN" ? "/admin/products" : "/staff/orders"} className="nav-item">Management</Link>}
+        </nav>
+        <nav aria-label="Departments" className="department-nav">{(departments.data ?? []).map(category => <Link key={category.categoryId} to={`/products?categoryId=${category.categoryId}`}>{category.name}</Link>)}</nav>
+      </div></div>
+    </header>
+    <main id="main-content" className="site-width store-main flex-1" tabIndex={-1}><Outlet /></main>
+    <StoreFooter brand={<Brand />} categories={departments.data ?? []} user={user} />
+  </div>;
 }
 
 function Home() {
-  const categories = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-  });
-
-  return (
-      <>
-        <section className="rounded-xl bg-slate-900 px-6 py-16 text-center text-white sm:px-12">
-          <p className="eyebrow text-orange-400">
-            Welcome to Mustafa Hardware
-          </p>
-
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Build Better.{" "}
-            <span className="text-orange-500">
-            Build Smarter.
-          </span>
-          </h1>
-
-          <p className="mx-auto mt-5 max-w-2xl text-slate-300">
-            Explore hardware and electronics for repairs,
-            study and everyday projects.
-          </p>
-
-          <Link
-              to="/products"
-              className="btn-primary mt-8 inline-block"
-          >
-            Shop Products
-          </Link>
-        </section>
-
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold">
-            Shop by category
-          </h2>
-
-          <p className="mt-2 text-slate-500">
-            Find what you need in our catalogue.
-          </p>
-
-          {categories.isPending ? (
-              <p className="mt-6" role="status">
-                Loading categories…
-              </p>
-          ) : categories.isError ? (
-              <p
-                  className="mt-6 text-red-700"
-                  role="alert"
-              >
-                Unable to load categories.{" "}
-                <button
-                    className="underline"
-                    onClick={() => categories.refetch()}
-                >
-                  Retry
-                </button>
-              </p>
-          ) : categories.data.length === 0 ? (
-              <p className="mt-6 text-slate-500">
-                Categories will appear here when added.
-              </p>
-          ) : (
-              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {categories.data.map((category) => (
-                    <Link
-                        key={category.categoryId}
-                        to={`/products?categoryId=${category.categoryId}`}
-                        className="panel p-6 transition-shadow hover:shadow-md"
-                    >
-                <span
-                    aria-hidden="true"
-                    className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-xl font-bold text-orange-700"
-                >
-                  {category.name.charAt(0)}
-                </span>
-
-                      <h3 className="font-bold">
-                        {category.name}
-                      </h3>
-
-                      <p className="mt-2 text-sm text-slate-500">
-                        {category.description || "Browse products"}
-                      </p>
-                    </Link>
-                ))}
-              </div>
-          )}
-        </section>
-      </>
-  );
+  const categories = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const products = useQuery({ queryKey: ["products"], queryFn: getProducts });
+  const items = products.data ?? [];
+  // Pick one pictured product per department rather than an invented promotion.
+  const highlights = (categories.data ?? []).map(category => items.find(product => product.category?.categoryId === category.categoryId && product.imageUrl && Number(product.quantity) > 0)).filter(Boolean).slice(0, 4);
+  return <>
+    <section className="retail-banner" aria-labelledby="home-title">
+      <div className="retail-banner-copy"><p className="eyebrow">Your hardware store, online</p><h1 id="home-title">Tools and supplies.<br />Ready for the job.</h1><p>Shop hand tools, power tools, electrical components and everyday hardware in one place.</p><Link to="/products" className="btn-primary">Shop all products <Icon name="arrow" /></Link></div>
+      <div className="retail-banner-photo"><img src="/images/products/cordless-drill-18v.jpg" alt="18V cordless drill" /><div><span>Tools for your next project</span><a href="#shop-categories">Browse departments <Icon name="arrow" /></a></div></div>
+    </section>
+    <div className="catalogue-strip"><span><Icon name="grid" />{products.isSuccess ? `${items.length} products in the catalogue` : "Browse our catalogue"}</span><span><Icon name="tools" />Hardware & project essentials</span><Link to="/orders">Track your orders <Icon name="arrow" /></Link></div>
+    <section id="shop-categories" className="department-section">
+      <div className="section-heading"><h2>Shop by department</h2><Link to="/products" className="text-link">View all products <Icon name="arrow" /></Link></div>
+      {categories.isPending ? <p className="py-8" role="status">Loading departments…</p> : categories.isError ? <p className="py-8 text-red-700" role="alert">Unable to load departments. <button className="underline" onClick={() => categories.refetch()}>Retry</button></p> : categories.data.length === 0 ? <p className="py-8">Departments will appear here when added.</p> :
+        <div className="department-grid">{categories.data.map(category => {
+          const departmentItems = items.filter(product => product.category?.categoryId === category.categoryId);
+          const image = departmentItems.find(product => product.imageUrl);
+          return <Link key={category.categoryId} to={`/products?categoryId=${category.categoryId}`} className="department-tile">
+            <div className="department-image">{image ? <ProductImage product={image} className="h-full w-full object-contain" /> : <Icon name="tools" />}</div>
+            <div className="department-caption"><h3>{category.name}</h3><Icon name="arrow" /></div><p>{products.isSuccess ? `${departmentItems.length} products` : "Browse products"}</p>
+          </Link>;
+        })}</div>}
+    </section>
+    <section className="home-products" aria-labelledby="essentials-heading">
+      <div className="section-heading"><h2 id="essentials-heading">Explore our range</h2><Link to="/products?availability=in" className="text-link">Shop in-stock products <Icon name="arrow" /></Link></div>
+      {products.isPending ? <p className="py-8" role="status">Loading products…</p> : products.isError ? <p className="py-8 text-red-700" role="alert">Unable to load products. <button className="underline" onClick={() => products.refetch()}>Retry</button></p> : highlights.length === 0 ? <p className="py-8">Available products will appear here when added.</p> :
+        <div className="home-product-grid">{highlights.map(product => <article key={product.productId} className="product-card">
+          <Link className="product-photo" to={`/products/${product.productId}`} aria-label={`View ${product.name}`}><ProductImage product={product} className="object-contain" /></Link>
+          <div className="product-card-body"><p className="eyebrow">{product.category?.name}</p><h3><Link to={`/products/${product.productId}`}>{product.name}</Link></h3><p className="product-price">Rs. {Number(product.price).toLocaleString("en-LK", { minimumFractionDigits: 2 })}</p><p className="product-stock">In stock · {product.quantity} available</p><Link className="btn-outline" to={`/products/${product.productId}`}>View product <Icon name="arrow" /></Link></div>
+        </article>)}</div>}
+    </section>
+  </>;
 }
 
 function Management() {
   const { user } = useAuth();
   const staff = user?.role === "STAFF";
   return (
-      <div className="min-h-screen bg-slate-100 md:flex">
-        <aside className="bg-slate-900 p-5 text-white md:w-60 md:shrink-0">
+      <div className="management-layout min-h-screen md:flex">
+        <aside className="management-sidebar p-5 text-white md:w-64 md:shrink-0">
           <Brand />
 
           <p className="mt-2 text-xs text-slate-400">
@@ -276,7 +161,7 @@ function Management() {
           </Link>
         </aside>
 
-        <main className="min-w-0 flex-1 p-5 md:p-10">
+        <main className="management-main min-w-0 flex-1 p-5 md:p-10">
           <Outlet />
         </main>
       </div>
@@ -311,6 +196,7 @@ export default function App() {
             />
 
             <Route path="login" element={<LoginPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="register" element={<RegisterPage />} />
 
             <Route
@@ -374,7 +260,7 @@ export default function App() {
                       Store management
                     </p>
 
-                    <h1 className="mt-2 text-3xl font-extrabold">
+                    <h1 className="mt-2 text-3xl font-bold">
                       Category Management
                     </h1>
 
