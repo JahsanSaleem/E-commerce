@@ -31,6 +31,43 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    public java.util.Map<String, Object> browse(int page, int size, String search, Long categoryId,
+            java.math.BigDecimal min, java.math.BigDecimal max, String availability, String sort) {
+        if (page < 1 || size < 1 || size > 100 || search.length() > 255 ||
+                (min != null && min.signum() < 0) || (max != null && max.signum() < 0) ||
+                (min != null && max != null && min.compareTo(max) > 0))
+            throw new IllegalArgumentException("Invalid page or price filters.");
+        if (!java.util.Set.of("", "in", "out").contains(availability))
+            throw new IllegalArgumentException("Invalid availability filter.");
+        var ordering = switch (sort) {
+            case "name" -> org.springframework.data.domain.Sort.by("name").ascending();
+            case "price-low" -> org.springframework.data.domain.Sort.by("price").ascending();
+            case "price-high" -> org.springframework.data.domain.Sort.by("price").descending();
+            default -> throw new IllegalArgumentException("Invalid product sort.");
+        };
+        ordering = ordering.and(org.springframework.data.domain.Sort.by("productId"));
+        org.springframework.data.jpa.domain.Specification<Product> filters = (root, query, cb) -> {
+            var rules = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (!search.isBlank()) {
+                String term = "%" + search.trim().toLowerCase(java.util.Locale.ROOT)
+                        .replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+                rules.add(cb.or(cb.like(cb.lower(root.get("name")), term, '!'),
+                        cb.like(cb.lower(root.get("description")), term, '!')));
+            }
+            if (categoryId != null) rules.add(cb.equal(root.get("category").get("categoryId"), categoryId));
+            if (min != null) rules.add(cb.greaterThanOrEqualTo(root.get("price"), min));
+            if (max != null) rules.add(cb.lessThanOrEqualTo(root.get("price"), max));
+            if (availability.equals("in")) rules.add(cb.greaterThan(root.get("quantity"), 0));
+            if (availability.equals("out")) rules.add(cb.equal(root.get("quantity"), 0));
+            return cb.and(rules.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+        var result = productRepository.findAll(filters, org.springframework.data.domain.PageRequest.of(page-1, size, ordering));
+        int pages = Math.max(1, result.getTotalPages());
+        if (page > pages) result = productRepository.findAll(filters, org.springframework.data.domain.PageRequest.of(pages-1, size, ordering));
+        return java.util.Map.of("content", result.getContent(), "totalElements", result.getTotalElements(),
+                "totalPages", pages, "page", Math.min(page, pages), "size", size);
+    }
+
     // Get product by ID
     public Product getProductById(Long id) {
         return productRepository.findById(id)

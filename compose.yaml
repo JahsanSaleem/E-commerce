@@ -25,6 +25,8 @@ services:
       DB_USERNAME: store
       DB_PASSWORD: ${DB_PASSWORD}
       FRONTEND_ORIGINS: http://localhost:8080
+      UPLOAD_DIR: /app/uploads
+      DELIVERY_FEE: ${DELIVERY_FEE:-249.00}
       COOKIE_SECURE: "false"
       GOOGLE_LOGIN_ENABLED: ${GOOGLE_LOGIN_ENABLED:-false}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -39,6 +41,8 @@ services:
       BOOTSTRAP_ADMIN_ENABLED: "true"
       INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@mustafa.com}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?Set a strong INITIAL_ADMIN_PASSWORD in .env}
+    volumes:
+      - product-images:/app/uploads
   frontend:
     build: ./frontend
     depends_on:
@@ -47,3 +51,4 @@ services:
       - "127.0.0.1:8080:80"
 volumes:
   store-data:
+  product-images:

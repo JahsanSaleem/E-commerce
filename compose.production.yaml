@@ -1,0 +1,25 @@
+# Run with: docker compose -f compose.yaml -f compose.production.yaml up -d --build
+services:
+  backend:
+    environment:
+      FRONTEND_ORIGINS: https://${STORE_DOMAIN:?Set STORE_DOMAIN}
+      COOKIE_SECURE: "true"
+      GOOGLE_REDIRECT_URI: https://${STORE_DOMAIN}/login/oauth2/code/google
+      GOOGLE_FRONTEND_URL: https://${STORE_DOMAIN}
+  https:
+    image: caddy:2-alpine
+    environment:
+      STORE_DOMAIN: ${STORE_DOMAIN}
+      TLS_EMAIL: ${TLS_EMAIL:?Set TLS_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls-data:/data
+      - tls-config:/config
+    depends_on:
+      - frontend
+volumes:
+  tls-data:
+  tls-config:

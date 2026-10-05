@@ -14,7 +14,7 @@ export default function LoginPage() {
     : googleError === "failed" ? "Google sign-in could not be completed. Please try again." : "");
   const [submitting, setSubmitting] = useState(false);
 
-  const destination = (account) => account.role === "ADMIN" ? "/admin/products" : account.role === "STAFF" ? "/staff/orders" : "/products";
+  const destination = (account) => account.role === "ADMIN" ? "/admin/dashboard" : account.role === "STAFF" ? "/staff/orders" : "/products";
   if (user) return <Navigate to={destination(user)} replace />;
 
   async function submit(event) {

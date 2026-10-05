@@ -47,7 +47,12 @@ CREATE TABLE `carts` (
 CREATE TABLE `orders` (
   `order_id` bigint NOT NULL AUTO_INCREMENT,
   `order_date` datetime(6) NOT NULL,
-  `status` enum('CANCELLED','CONFIRMED','DELIVERED','PENDING','PROCESSING','SHIPPED') NOT NULL,
+  fulfilment VARCHAR(20) NULL,
+  recipient_name VARCHAR(255) NULL,
+  phone VARCHAR(25) NULL,
+  address VARCHAR(500) NULL,
+  delivery_fee DECIMAL(10,2) NULL,
+  `status` enum('CANCELLED','CONFIRMED','DELIVERED','PENDING','PROCESSING','SHIPPED','READY_FOR_COLLECTION') NOT NULL,
   `total_amount` decimal(10,2) NOT NULL,
   `user_id` bigint NOT NULL,
   `checkout_key` varchar(36) DEFAULT NULL,
@@ -108,4 +113,14 @@ CREATE TABLE IF NOT EXISTS password_reset (
     last_sent_at DATETIME(6) NOT NULL,
     attempts INT NOT NULL,
     send_count INT NOT NULL
+);
+
+CREATE TABLE saved_address (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT NOT NULL,
+ label VARCHAR(80) NOT NULL,
+ recipient_name VARCHAR(255) NOT NULL,
+ phone VARCHAR(25) NOT NULL,
+ address VARCHAR(500) NOT NULL,
+ INDEX saved_address_user (user_id)
 );

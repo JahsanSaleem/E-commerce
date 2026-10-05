@@ -1,0 +1,14 @@
+import {useQuery} from "@tanstack/react-query";
+import {Link} from "react-router-dom";
+import apiClient from "../services/apiClient.js";
+export default function Dashboard(){
+ const stats=useQuery({queryKey:["dashboard"],queryFn:async()=>(await apiClient.get("/api/admin/dashboard")).data,refetchOnWindowFocus:true});
+ if(stats.isPending)return <p role="status">Loading dashboard…</p>;
+ if(stats.isError)return <p role="alert">Unable to load dashboard. <button onClick={()=>stats.refetch()}>Retry</button></p>;
+ const data=stats.data;
+ return <section className="space-y-6"><div className="flex flex-wrap justify-between gap-3"><div><h1 className="text-3xl font-bold">Store dashboard</h1><p className="mt-2 text-slate-500">Orders, delivered order value and stock overview.</p></div><button className="btn-outline" disabled={stats.isFetching} onClick={()=>stats.refetch()}>Refresh</button></div>
+ <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[['Products',data.products],['Accounts',data.users],['Orders',data.orders],['Delivered order value',`Rs. ${Number(data.deliveredOrderValue).toLocaleString('en-LK',{minimumFractionDigits:2})}`]].map(([label,value])=><div key={label} className="panel p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-2xl font-bold">{value}</p></div>)}</div>
+ <p className="text-sm text-slate-500">Delivered order value includes delivery fees. It is not a record of payments received.</p>
+ <div className="grid gap-6 lg:grid-cols-2"><div className="panel p-5"><h2 className="text-xl font-bold">Orders by status</h2><ul className="mt-4 divide-y">{Object.entries(data.statusCounts).map(([status,count])=><li key={status} className="flex justify-between py-3"><span>{status.replaceAll('_',' ')}</span><strong>{count}</strong></li>)}</ul></div><div className="panel p-5"><h2 className="text-xl font-bold">Delivered orders by month</h2>{!data.monthlyDelivered.length?<p className="mt-4 text-sm">No delivered orders in the last twelve months.</p>:<table className="mt-4 w-full text-sm"><thead><tr><th className="text-left">Month</th><th>Orders</th><th>Value (Rs.)</th></tr></thead><tbody>{data.monthlyDelivered.map(row=><tr key={row.month}><td className="py-3">{row.month}</td><td className="text-center">{row.orders}</td><td className="text-right">{Number(row.total).toFixed(2)}</td></tr>)}</tbody></table>}</div></div>
+ <div className="panel p-5"><h2 className="text-xl font-bold">Low stock — {data.lowStockCount} products</h2><p className="mt-2 text-sm text-slate-500">Five units or fewer. Showing up to ten products.</p><ul className="mt-4 divide-y">{data.lowStock.map(product=><li key={product.productId} className="flex justify-between gap-4 py-3"><Link to={`/products/${product.productId}`} className="underline">{product.name}</Link><strong>{product.quantity} remaining</strong></li>)}</ul><Link to="/admin/inventory" className="btn-outline mt-4">Manage inventory</Link></div></section>;
+}

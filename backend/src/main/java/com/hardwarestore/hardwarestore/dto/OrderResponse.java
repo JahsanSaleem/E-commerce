@@ -28,6 +28,20 @@ public class OrderResponse {
         this.status = status;
     }
 
+    public static OrderResponse from(com.hardwarestore.hardwarestore.model.Order order) {
+        var response=new OrderResponse(order.getOrderId(),order.getCustomer().getId(),order.getOrderDate(),order.getTotalAmount(),order.getStatus());
+        response.fulfilment=order.getFulfilment(); response.recipientName=order.getRecipientName();
+        response.phone=order.getPhone(); response.address=order.getAddress(); response.deliveryFee=order.getDeliveryFee();
+        return response;
+    }
+    private String fulfilment, recipientName, phone, address;
+    private BigDecimal deliveryFee;
+    public String getFulfilment() { return fulfilment; }
+    public String getRecipientName() { return recipientName; }
+    public String getPhone() { return phone; }
+    public String getAddress() { return address; }
+    public BigDecimal getDeliveryFee() { return deliveryFee; }
+
     public Long getOrderId() {
         return orderId;
     }

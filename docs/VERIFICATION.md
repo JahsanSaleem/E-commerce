@@ -95,3 +95,14 @@ Adapted the prominent search, department navigation and rectangular merchandisin
 - All 101 backend tests passed, including password hashing/replacement, consumed and expired codes, persisted incorrect attempts, send limits, unknown/Google-only accounts, email failures and expiry of existing sessions.
 - Frontend production build, lint and whitespace checks passed. Browser checks verified the link, code form and password mismatch feedback; desktop 1280px and mobile 390px had no page overflow.
 - Restarted the local backend successfully; existing Brevo settings are reused. Recovery UI verification used a nonexistent reserved test address and sent no real email. Password reset and confirmation delivery were verified with a mocked mail sender in integration tests.
+
+
+### E-commerce feature increments — 2026-10-06
+
+- Clean backend release build passed **110 tests**, with zero failures, errors or skipped tests. Coverage includes catalogue paging/filter validation, delivery fees and fulfilment snapshots, checkout retries/concurrency, saved-address ownership, profile/password/session updates, image decoding/content limits, dashboard permissions, collection transitions, notification retry suppression and login throttling.
+- Frontend production build, lint and whitespace checks passed.
+- Live browser checks: public catalogue advances from 1–9 to 10–18 of 52 products; delivery checkout adds LKR 249 (18,900 subtotal → 19,149 total), collection adds zero. Order review shows recipient and address. No live order was submitted; the temporary cart item was removed afterwards.
+- Checkout and account pages checked at 390px with no horizontal page overflow. Dashboard shows live ECOM counts and low stock. Admin JPEG upload returned a stored PNG and its preview loaded; the product was not changed.
+- Order emails and account password confirmations use mocked mail delivery in automated tests. This is not evidence of live order-email inbox delivery. The bounded notification queue is not durable.
+- Packaged production startup outside the checkout validated ECOM and returned HTTP 200 health; local credentials are excluded from the JAR.
+- Private ECOM backup restored successfully into a temporary database; all ten table row counts matched. Docker/HTTPS/container execution and public hosting remain pending because Docker and a hosting target are unavailable.

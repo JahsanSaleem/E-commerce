@@ -2,24 +2,21 @@ import { Link } from "react-router-dom"
 import Icon from "./Icon.jsx"
 import { useEffect, useRef, useState } from 'react'
 import {
-    checkoutCart,
     getCart,
     removeCartItem,
     updateCartQuantity,
 } from '../services/cartService.js'
-import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../auth/authContext.js'
 
 function Cart() {
     const { user } = useAuth()
-    const client = useQueryClient()
     const checkoutKey = useRef(null)
     const operationPending = useRef(false)
     const [busy, setBusy] = useState(false)
     const [cart, setCart] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
-    const [checkoutMessage, setCheckoutMessage] = useState('')
+    const [checkoutMessage] = useState('')
 
     const userId = user.id
 
@@ -93,36 +90,6 @@ function Cart() {
             .catch((error) => {
                 console.error('Failed to remove item:', error)
                 setError(error.response?.data?.message || 'Unable to remove item from cart.')
-            }).finally(() => { operationPending.current = false; setBusy(false) })
-    }
-
-    const checkout = () => {
-        if (operationPending.current) return
-        operationPending.current = true
-        setBusy(true)
-        checkoutKey.current ??= crypto.randomUUID()
-        setCheckoutMessage('')
-        setError('')
-
-        checkoutCart(userId, checkoutKey.current)
-            .then((order) => {
-                checkoutKey.current = null
-                client.invalidateQueries({ queryKey: ["products"] })
-                client.invalidateQueries({ queryKey: ["inventory"] })
-                setCheckoutMessage(
-                    `Order #${order.orderId} created successfully.`
-                )
-                loadCart()
-            })
-            .catch((error) => {
-                console.error('Checkout failed:', error)
-                const responseMessage = error.response?.data?.message
-                setError(
-                    error.response?.status < 500 && responseMessage
-                        ? responseMessage
-                        : 'Unable to complete checkout. Please try again.'
-                )
-                if (error.response?.status < 500) checkoutKey.current = null
             }).finally(() => { operationPending.current = false; setBusy(false) })
     }
 
@@ -316,7 +283,7 @@ function Cart() {
                         <button
                             type="button"
                             disabled={busy}
-                            onClick={checkout}
+                            onClick={() => window.location.assign("/checkout")}
                             className="btn-primary mt-6 w-full py-3"
                         >
                             {busy ? "Please wait…" : "Proceed to Checkout"}

@@ -99,13 +99,7 @@ public class OrderController {
 
     private OrderResponse toOrderResponse(Order order) {
 
-        return new OrderResponse(
-                order.getOrderId(),
-                order.getCustomer().getId(),
-                order.getOrderDate(),
-                order.getTotalAmount(),
-                order.getStatus()
-        );
+        return OrderResponse.from(order);
     }
 
     private OrderItemResponse toOrderItemResponse(OrderItem orderItem) {

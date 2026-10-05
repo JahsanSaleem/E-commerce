@@ -118,21 +118,22 @@ public class CartController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/checkout/options")
+    public java.util.Map<String, Object> options() {
+        return java.util.Map.of("deliveryFee", orderService.deliveryFee(), "collectionFee", java.math.BigDecimal.ZERO);
+    }
+
     @PostMapping("/cart/{userId}/checkout")
     public OrderResponse checkout(@PathVariable Long userId, HttpSession session,
-                                  @RequestHeader(value = "X-Checkout-Key", required = false) String checkoutKey) {
+                                  @RequestHeader(value = "X-Checkout-Key", required = false) String checkoutKey,
+                                  @jakarta.validation.Valid @RequestBody com.hardwarestore.hardwarestore.dto.CheckoutRequest details) {
 
         User customer = getAuthenticatedCustomer(userId, session);
 
-        Order order = checkoutKey == null ? orderService.checkout(customer) : orderService.checkout(customer, checkoutKey);
+        details.validate();
+        Order order = orderService.checkout(customer, checkoutKey == null ? java.util.UUID.randomUUID().toString() : checkoutKey, details);
 
-        return new OrderResponse(
-                order.getOrderId(),
-                order.getCustomer().getId(),
-                order.getOrderDate(),
-                order.getTotalAmount(),
-                order.getStatus()
-        );
+        return OrderResponse.from(order);
     }
 
     private CartItemResponse toCartItemResponse(CartItem cartItem) {

@@ -22,12 +22,13 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private final com.hardwarestore.hardwarestore.service.LoginRateLimiter loginLimiter;
     private final UserService userService;
 
     private final RegistrationVerificationService verification;
     private final RegistrationRateLimiter rateLimiter;
-    public AuthController(UserService userService, RegistrationVerificationService verification, RegistrationRateLimiter rateLimiter) {
-        this.userService=userService; this.verification=verification; this.rateLimiter=rateLimiter;
+    public AuthController(UserService userService, RegistrationVerificationService verification, RegistrationRateLimiter rateLimiter, com.hardwarestore.hardwarestore.service.LoginRateLimiter loginLimiter) {
+        this.loginLimiter=loginLimiter; this.userService=userService; this.verification=verification; this.rateLimiter=rateLimiter;
     }
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
@@ -51,6 +52,7 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpSession session, HttpServletRequest httpRequest
     ) {
+        loginLimiter.check(httpRequest.getRemoteAddr(), request.getEmail());
         try {
             User user = userService.loginUser(
                     request.getEmail(),

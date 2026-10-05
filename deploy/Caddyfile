@@ -1,0 +1,6 @@
+{
+    email {$TLS_EMAIL}
+}
+{$STORE_DOMAIN} {
+    reverse_proxy frontend:80
+}

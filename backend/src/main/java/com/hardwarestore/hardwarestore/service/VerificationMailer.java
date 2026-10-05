@@ -21,6 +21,7 @@ public class VerificationMailer {
     public void sendResetCode(String email, String code) {
         send(email, code, "password reset", "reset your password");
     }
+    public void sendOrderMessage(String email,String subject,String body) { deliver(email,subject,body); }
     public void sendPasswordChanged(String email) {
         deliver(email, "Mustafa Hardware — password changed",
                 "Your Mustafa Hardware password was changed.\nIf you did not make this change, reset your password immediately and contact the store.\nYour existing store sessions have been signed out.");

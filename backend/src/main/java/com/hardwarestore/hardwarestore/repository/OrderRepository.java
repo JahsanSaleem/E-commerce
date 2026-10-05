@@ -23,4 +23,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomer(User customer);
 
     List<Order> findByStatus(OrderStatus status);
+    long countByStatus(OrderStatus status);
+    @Query("select coalesce(sum(o.totalAmount),0) from Order o where o.status = :status")
+    java.math.BigDecimal totalByStatus(@Param("status") OrderStatus status);
+    @Query("select year(o.orderDate), month(o.orderDate), sum(o.totalAmount), count(o) from Order o where o.status = :status and o.orderDate >= :since group by year(o.orderDate), month(o.orderDate) order by year(o.orderDate), month(o.orderDate)")
+    List<Object[]> monthlyDelivered(@Param("status") OrderStatus status, @Param("since") java.time.LocalDateTime since);
+
 }

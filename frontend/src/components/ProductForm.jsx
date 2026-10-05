@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getCategories } from "../services/categoryService.js";
+import ProductImage from "./ProductImage.jsx";
+import apiClient from "../services/apiClient.js";
 import { saveProduct } from "../services/productService.js";
 
 export default function ProductForm({ product, onClose, onSaved }) {
@@ -11,6 +13,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
     price: product?.price ?? "", quantity: product?.quantity ?? 0, imageUrl: product?.imageUrl ?? "",
     categoryId: product?.category?.categoryId ?? "",
   });
+  const [uploading,setUploading]=useState(false);
+  const [uploadError,setUploadError]=useState("");
+  async function upload(event){const file=event.target.files?.[0];if(!file)return;setUploading(true);setUploadError("");try{const data=new FormData();data.append("file",file);const result=await apiClient.post("/api/products/images",data,{headers:{"Content-Type":undefined}});setForm(previous=>({...previous,imageUrl:result.data.imageUrl}));}catch(e){setUploadError(e.response?.data?.message||"Upload failed. Choose a JPEG or PNG up to 5 MB.");}finally{setUploading(false);event.target.value="";}}
   const categories = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const mutation = useMutation({
     mutationFn: saveProduct,
@@ -69,7 +74,9 @@ export default function ProductForm({ product, onClose, onSaved }) {
             {categories.isSuccess && categories.data.length === 0 && <p className="mt-2 text-sm text-slate-600">Create a category first in <Link className="text-orange-700 underline" to="/admin/categories">Category Management</Link>.</p>}
           </div>
         </div>
+        <div><label className="field-label" htmlFor="product-upload">Upload product image</label><input id="product-upload" type="file" accept="image/jpeg,image/png" disabled={uploading||mutation.isPending} onChange={upload}/><p className="mt-1 text-sm text-slate-500">JPEG or PNG, up to 5 MB. {uploading?"Uploading…":""}</p>{uploadError&&<p role="alert" className="field-error">{uploadError}</p>}</div>
         {field("imageUrl", "Image URL", { maxLength: 500, placeholder: "https://…" })}
+        {form.imageUrl&&<ProductImage product={{name:form.name||"Product preview",imageUrl:form.imageUrl}} className="h-40 w-40 border p-2"/>}
         <div>
           <label className="field-label" htmlFor="product-description">Description</label>
           <textarea id="product-description" name="description" value={form.description} onChange={change}
@@ -78,7 +85,7 @@ export default function ProductForm({ product, onClose, onSaved }) {
           {errors.description && <p role="alert" className="field-error">{errors.description}</p>}
         </div>
         <div className="flex gap-3">
-          <button className="btn-primary" disabled={mutation.isPending || !categories.data?.length}>{mutation.isPending ? "Saving…" : "Save Product"}</button>
+          <button className="btn-primary" disabled={uploading || mutation.isPending || !categories.data?.length}>{mutation.isPending ? "Saving…" : "Save Product"}</button>
           <button type="button" className="btn-outline" disabled={mutation.isPending} onClick={onClose}>Cancel</button>
         </div>
       </form>

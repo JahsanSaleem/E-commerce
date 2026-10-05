@@ -17,7 +17,7 @@ class OrderProcessingTests {
     OrderRepository orders=mock(OrderRepository.class);
     OrderItemRepository items=mock(OrderItemRepository.class);
     ProductRepository products=mock(ProductRepository.class);
-    OrderService service=new OrderService(mock(CartRepository.class),mock(CartItemRepository.class),orders,items,products,mock(UserRepository.class));
+    OrderService service=new OrderService(mock(CartRepository.class),mock(CartItemRepository.class),orders,items,products,mock(UserRepository.class),mock(PasswordResetMailDispatcher.class));
     private Order order(OrderStatus status) {
         var order=new Order(new User(),LocalDateTime.now(),BigDecimal.TEN,status);
         when(orders.findByIdForUpdate(1L)).thenReturn(Optional.of(order));

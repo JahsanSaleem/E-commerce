@@ -53,3 +53,25 @@ Keep the legacy order_items.price column while the compatibility model still use
 Verified locally: MySQL migration/acceptance workflow, clean backend verification, frontend build/lint, and exclusion of local credentials from the JAR. The packaged production profile was started outside the source checkout on temporary port 8082 with bootstrap disabled; ECOM schema validation and /api/health succeeded. It was then stopped.
 
 Before calling a hosted release complete, verify HTTPS/API/cookies/CORS, routes on refresh, all three roles, checkout concurrency/retry, monitoring and backup/restore. Establish measurable uptime/recovery/capacity targets with the owner. The local 29-request smoke timing is not a production load test.
+
+## HTTPS overlay and uploads
+
+For an actual server with ports 80/443 available and domain DNS pointing to it, set `STORE_DOMAIN` and `TLS_EMAIL` in the ignored `.env`, then use `docker compose -f compose.yaml -f compose.production.yaml up -d --build`. Caddy terminates HTTPS and renews certificates; Nginx preserves the forwarded HTTPS scheme. The backend remains internal, with secure cookies enabled. Configure Google’s production redirect/origin separately in Google Cloud. This overlay is preparation, not evidence of a live deployment; Docker is not installed on the current development host.
+
+Uploaded images live in the persistent `product-images` volume, separate from the database. Back up and restore this volume with the database. Each upload is admin-only, bounded to 5 MB, limited to JPEG/PNG, decoded/re-encoded and stored with a random name. Pending unused uploads are retained; remove unreferenced files during maintenance after a backup.
+
+Apply new manual migrations in feature order after the earlier STAFF, checkout-integrity and Google-login migrations: registration verification, password reset, checkout fulfilment, saved addresses, and collection status. Several historical scripts share a numeric prefix, so use their full filenames; these scripts do not form an automatic migration runner. Never reapply the non-repeatable ALTER scripts. Record each applied filename.
+
+Sign-in throttling allows up to ten attempts per email and thirty per IP in ten minutes. It is local to each backend process; use shared limits and validate proxy handling when scaling to multiple instances.
+
+Order and account emails use a bounded local queue after commit. The queue is not durable, so provider errors, capacity exhaustion or restarts can lose notifications. Use a transactional outbox/durable queue before promising reliable production notifications. Email failures do not roll back orders.
+
+
+## Verification on 6 October 2026
+
+- Clean backend release verification passed 110 tests. Frontend build and lint passed.
+- The packaged JAR excludes application-local.properties. Started outside the checkout with the production profile, bootstrap disabled and ECOM schema validation; database health returned HTTP 200. The temporary process was stopped.
+- An ECOM backup was created in the ignored local backups directory with owner-only permissions. It was restored into a temporary database; row counts for all ten tables matched the source. The temporary database was then removed. The college database was not used.
+- Docker is not installed here: Compose/HTTPS execution and uploaded-image-volume restoration remain unverified. No public deployment is claimed.
+
+For a restore, stop application writes, restore the SQL into an empty recovery database, restore the matching upload storage, start the production profile against the recovery database and verify health, catalogue images, accounts and orders. Keep backups private: they contain account hashes and customer/order details. Agree on recovery time and backup retention before hosting.

@@ -1,3 +1,4 @@
+import OrderFulfilment from "./OrderFulfilment.jsx";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCustomerOrders, getOrderItems } from "../services/orderService.js";
@@ -189,6 +190,7 @@ function OrderList() {
                 </span>
                             </div>
 
+                            <OrderFulfilment order={order} />
                             <button
                                 type="button"
                                 className="mt-4 text-sm font-bold text-orange-700 hover:underline"

@@ -32,6 +32,22 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status;
 
+    @Column(length=20) private String fulfilment;
+    private String recipientName;
+    @Column(length=25) private String phone;
+    @Column(length=500) private String address;
+    @Column(precision=10, scale=2) private BigDecimal deliveryFee;
+    public String getFulfilment() { return fulfilment; }
+    public void setFulfilment(String value) { fulfilment=value; }
+    public String getRecipientName() { return recipientName; }
+    public void setRecipientName(String value) { recipientName=value; }
+    public String getPhone() { return phone; }
+    public void setPhone(String value) { phone=value; }
+    public String getAddress() { return address; }
+    public void setAddress(String value) { address=value; }
+    public BigDecimal getDeliveryFee() { return deliveryFee == null ? BigDecimal.ZERO : deliveryFee; }
+    public void setDeliveryFee(BigDecimal value) { deliveryFee=value; }
+
     public Order() {
     }
 

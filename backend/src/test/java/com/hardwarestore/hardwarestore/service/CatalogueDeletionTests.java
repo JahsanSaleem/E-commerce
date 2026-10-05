@@ -105,7 +105,7 @@ class CatalogueDeletionTests {
         when(categories.findById(999L)).thenReturn(Optional.empty());
         mvc.perform(delete("/api/" + type + "/999").session(admin))
                 .andExpect(status().isNotFound());
-        verify(products, never()).delete(any());
+        verify(products, never()).delete(any(Product.class));
         verify(categories, never()).delete(any());
     }
 }

@@ -24,6 +24,19 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("/browse")
+    public java.util.Map<String, Object> browse(
+            @RequestParam(defaultValue="1") int page,
+            @RequestParam(defaultValue="9") int size,
+            @RequestParam(defaultValue="") String search,
+            @RequestParam(required=false) Long categoryId,
+            @RequestParam(required=false) java.math.BigDecimal min,
+            @RequestParam(required=false) java.math.BigDecimal max,
+            @RequestParam(defaultValue="") String availability,
+            @RequestParam(defaultValue="name") String sort) {
+        return productService.browse(page, size, search, categoryId, min, max, availability, sort);
+    }
+
     // GET product by ID
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(

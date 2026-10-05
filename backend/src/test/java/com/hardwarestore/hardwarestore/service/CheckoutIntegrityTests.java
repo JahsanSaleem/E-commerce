@@ -101,4 +101,19 @@ class CheckoutIntegrityTests {
         orders.updateOrderStatus(order.getOrderId(),OrderStatus.CANCELLED);
         assertEquals(2,products.findById(product.getProductId()).orElseThrow().getQuantity());
     }
+    @Test void deliveryFeeAndSnapshotAreServerCalculatedAndRetrySafe() {
+        var user=customer();var product=product(5);carts.addItem(user,product,2);
+        var details=new com.hardwarestore.hardwarestore.dto.CheckoutRequest("DELIVERY","Recipient","0771234567","123 Test Street, Colombo");
+        String key=UUID.randomUUID().toString();var order=orders.checkout(user,key,details);
+        assertEquals(new BigDecimal("274.00"),order.getTotalAmount());assertEquals(new BigDecimal("249.00"),order.getDeliveryFee());
+        assertEquals(details.address(),order.getAddress());assertEquals(order.getOrderId(),orders.checkout(user,key,details).getOrderId());
+    }
+    @Test void collectionHasNoFeeAndInvalidAddressDoesNotDeductStock() {
+        var user=customer();var product=product(2);carts.addItem(user,product,1);
+        var invalid=new com.hardwarestore.hardwarestore.dto.CheckoutRequest("DELIVERY","Recipient","0771234567","");
+        assertThrows(IllegalArgumentException.class,()->orders.checkout(user,UUID.randomUUID().toString(),invalid));
+        assertEquals(2,products.findById(product.getProductId()).orElseThrow().getQuantity());
+        var details=new com.hardwarestore.hardwarestore.dto.CheckoutRequest("COLLECTION","Recipient","0771234567",null);
+        var order=orders.checkout(user,UUID.randomUUID().toString(),details);assertEquals(new BigDecimal("12.50"),order.getTotalAmount());assertEquals(BigDecimal.ZERO,order.getDeliveryFee());assertNull(order.getAddress());
+    }
 }

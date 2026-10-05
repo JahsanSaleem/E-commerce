@@ -24,6 +24,6 @@ export async function removeCartItem({ userId, productId }) {
   await apiClient.delete(`/api/cart/${userId}/items/${productId}`);
 }
 
-export async function checkoutCart(userId, checkoutKey) {
-  return (await apiClient.post(`/api/cart/${userId}/checkout`, null, { headers: { "X-Checkout-Key": checkoutKey } })).data;
+export async function checkoutCart(userId, checkoutKey, details) {
+  return (await apiClient.post(`/api/cart/${userId}/checkout`, details, { headers: { "X-Checkout-Key": checkoutKey } })).data;
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { getProducts, deleteProduct } from "../services/productService.js";
+import { browseProducts, deleteProduct } from "../services/productService.js";
 import { getCategories } from "../services/categoryService.js";
 import ProductImage from "./ProductImage.jsx";
 import Icon from "./Icon.jsx";
@@ -15,7 +15,6 @@ export default function ProductBrowser({ management = false }) {
   const [params, setParams] = useSearchParams();
   const [editor, setEditor] = useState(null);
   const [message, setMessage] = useState("");
-  const products = useQuery({ queryKey: ["products"], queryFn: getProducts });
   const categories = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const remove = useMutation({ mutationFn: deleteProduct, onSuccess: async () => {
     setMessage("Product deleted successfully.");
@@ -37,17 +36,16 @@ export default function ProductBrowser({ management = false }) {
       return next;
     }, { replace: true });
   }
-  const visible = (products.data ?? []).filter((product) =>
-    `${product.name} ${product.description ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()) &&
-    (!category || String(product.category?.categoryId) === category) &&
-    (!availability || (availability === "in" ? Number(product.quantity ?? 0) > 0 : Number(product.quantity ?? 0) === 0)) &&
-    (min === "" || product.price >= Number(min)) && (max === "" || product.price <= Number(max))
-  ).sort((a, b) => sort === "price-low" ? a.price - b.price : sort === "price-high" ? b.price - a.price : a.name.localeCompare(b.name));
-  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const requestedPage = Number(params.get("page") ?? 1);
-  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? Math.min(requestedPage, pageCount) : 1;
+  const queryPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const query = { page: queryPage, size: PAGE_SIZE, search, categoryId: category || undefined,
+    min: min || undefined, max: max || undefined, availability, sort };
+  const products = useQuery({ queryKey: ["products", "browse", query], queryFn: () => browseProducts(query), enabled: !invalidRange });
+  const total = products.data?.totalElements ?? 0;
+  const pageCount = products.data?.totalPages ?? 1;
+  const page = products.data?.page ?? queryPage;
   const start = (page - 1) * PAGE_SIZE;
-  const pageProducts = visible.slice(start, start + PAGE_SIZE);
+  const pageProducts = products.data?.content ?? [];
   function changePage(nextPage) {
     setParams((previous) => {
       const next = new URLSearchParams(previous);
@@ -95,10 +93,10 @@ export default function ProductBrowser({ management = false }) {
       </aside>
       <div className="min-w-0">
         <div className="catalogue-toolbar mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
-          <span role="status">{products.isSuccess ? visible.length ? `Showing ${start + 1}–${start + pageProducts.length} of ${visible.length} products` : "0 products" : "Catalogue"}</span>
+          <span role="status">{products.isSuccess ? total ? `Showing ${start + 1}–${start + pageProducts.length} of ${total} products` : "0 products" : "Catalogue"}</span>
           <label className="flex items-center gap-2">Sort by<select className="rounded border border-slate-200 bg-white p-2" value={sort} onChange={(e) => filter("sort", e.target.value)}><option value="name">Name</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
         </div>
-        {products.isPending ? <p role="status" className="panel p-8">Loading products…</p> : products.isError ? <div role="alert" className="panel p-8 text-red-700">Unable to load products. Check that Spring Boot is running, then use Refresh.</div> : visible.length === 0 ? <div className="panel p-12 text-center"><h2 className="font-bold">No products found</h2><p className="mt-2 text-sm text-slate-500">{products.data.length ? "Try changing your filters." : "Products will appear here after they are added."}</p></div> : management ? (
+        {invalidRange ? <p className="panel p-8">Correct the price range to browse products.</p> : products.isPending ? <p role="status" className="panel p-8">Loading products…</p> : products.isError ? <div role="alert" className="panel p-8 text-red-700">Unable to load products. Check that Spring Boot is running, then use Refresh.</div> : total === 0 ? <div className="panel p-12 text-center"><h2 className="font-bold">No products found</h2><p className="mt-2 text-sm text-slate-500">{total ? "Try changing your filters." : "Products will appear here after they are added."}</p></div> : management ? (
           <div className="panel overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b bg-slate-50 text-slate-500"><tr>{["Product", "Category", "Price", "Stock", "Actions"].map((title) => <th key={title} scope="col" className="p-4">{title}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">
             {pageProducts.map((product) => <tr key={product.productId} className="hover:bg-slate-50"><td className="p-4"><Link className="font-bold hover:text-orange-700" to={`/products/${product.productId}`}>{product.name}</Link><p className="mt-1 max-w-xs truncate text-slate-500">{product.description || "—"}</p></td><td className="p-4">{product.category?.name}</td><td className="whitespace-nowrap p-4">Rs. {Number(product.price).toLocaleString("en-LK", { minimumFractionDigits: 2 })}</td><td className={`whitespace-nowrap p-4 font-semibold ${Number(product.quantity ?? 0) > 0 ? "text-green-700" : "text-red-700"}`}>{Number(product.quantity ?? 0) > 0 ? `${product.quantity} in stock` : "Out of stock"}</td><td className="p-4"><div className="flex gap-2"><button className="btn-outline" disabled={editor !== null || remove.isPending} onClick={() => { setMessage(""); remove.reset(); setEditor(product); }}>Edit</button><button className="btn-danger" disabled={editor !== null || remove.isPending} onClick={() => { if (window.confirm(`Permanently delete "${product.name}"?`)) { setMessage(""); remove.mutate(product.productId); } }}>{remove.isPending && remove.variables === product.productId ? "Deleting…" : "Delete"}</button></div></td></tr>)}
           </tbody></table></div>
@@ -107,7 +105,7 @@ export default function ProductBrowser({ management = false }) {
           <div className="product-card-body"><p className="eyebrow">{product.category?.name}</p><h2><Link to={`/products/${product.productId}`}>{product.name}</Link></h2><p className="product-description line-clamp-2">{product.description || "View product details."}</p>
             <div className="product-card-bottom"><div><p className="product-price">Rs. {Number(product.price).toLocaleString("en-LK", { minimumFractionDigits: 2 })}</p><p className="product-stock">{Number(product.quantity ?? 0) > 0 ? `${product.quantity} available` : "Currently unavailable"}</p></div><Link className="product-link" to={`/products/${product.productId}`}>View Details <Icon name="arrow" /></Link></div>
           </div></article>)}</div>}
-        {products.isSuccess && visible.length > 0 && <nav aria-label="Product pages" className="pagination mt-6 flex flex-wrap items-center justify-between gap-3">
+        {products.isSuccess && total > 0 && <nav aria-label="Product pages" className="pagination mt-6 flex flex-wrap items-center justify-between gap-3">
           <button className="btn-outline" disabled={page === 1} onClick={() => changePage(page - 1)}>Previous</button>
           <span className="page-position text-sm text-slate-500">Page <strong>{page}</strong> of {pageCount}</span>
           <button className="btn-outline" disabled={page === pageCount} onClick={() => changePage(page + 1)}>Next</button>

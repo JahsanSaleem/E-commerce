@@ -32,7 +32,7 @@ public class SessionRefreshInterceptor implements HandlerInterceptor {
             session.setAttribute("email", user.getEmail());
         }
         String path = request.getRequestURI();
-        boolean accountManagement = path.startsWith("/api/admin/users");
+        boolean accountManagement = path.startsWith("/api/admin/");
         boolean operations = path.startsWith("/api/inventory") || path.startsWith("/api/orders/status/")
                 || (path.startsWith("/api/orders/") && path.endsWith("/status"));
         if (accountManagement || operations) {

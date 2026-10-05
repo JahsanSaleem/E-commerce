@@ -25,6 +25,7 @@ import java.util.List;
 @Service
 public class OrderService {
 
+    private final PasswordResetMailDispatcher notifications;
     private final UserRepository userRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
@@ -38,8 +39,9 @@ public class OrderService {
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
             ProductRepository productRepository,
-            UserRepository userRepository
+            UserRepository userRepository, PasswordResetMailDispatcher notifications
     ) {
+        this.notifications=notifications;
         this.userRepository = userRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
@@ -53,8 +55,19 @@ public class OrderService {
         return checkout(customer, java.util.UUID.randomUUID().toString());
     }
 
+    @org.springframework.beans.factory.annotation.Value("${store.delivery-fee:249.00}")
+    private BigDecimal configuredDeliveryFee;
+    public BigDecimal deliveryFee() {
+        if (configuredDeliveryFee.signum()<0) throw new IllegalStateException("Delivery fee cannot be negative");
+        return configuredDeliveryFee.setScale(2, java.math.RoundingMode.UNNECESSARY);
+    }
     @Transactional
     public Order checkout(User customer, String checkoutKey) {
+        return checkout(customer, checkoutKey, null);
+    }
+    @Transactional
+    public Order checkout(User customer, String checkoutKey, com.hardwarestore.hardwarestore.dto.CheckoutRequest details) {
+        if (details != null) details.validate();
         try { java.util.UUID.fromString(checkoutKey); }
         catch (IllegalArgumentException exception) { throw new IllegalArgumentException("Checkout key must be a UUID"); }
         userRepository.findByIdForUpdate(customer.getId()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -120,14 +133,20 @@ public class OrderService {
             totalAmount = totalAmount.add(itemTotal);
         }
 
+        BigDecimal fee = details != null && details.fulfilment().equals("DELIVERY") ? deliveryFee() : BigDecimal.ZERO;
         // Create order
         Order order = new Order(
                 customer,
                 LocalDateTime.now(),
-                totalAmount,
+                totalAmount.add(fee),
                 OrderStatus.PENDING
         );
 
+        if (details != null) {
+            order.setFulfilment(details.fulfilment()); order.setRecipientName(details.recipientName().trim());
+            order.setPhone(details.phone().trim()); order.setAddress(details.fulfilment().equals("DELIVERY") ? details.address().trim() : null);
+        }
+        order.setDeliveryFee(fee);
         order.setCheckoutKey(checkoutKey);
         order = orderRepository.save(order);
 
@@ -153,6 +172,7 @@ public class OrderService {
         cart.setTotalAmount(BigDecimal.ZERO);
         cartRepository.save(cart);
 
+        notifyCustomer(order, "Order received");
         return order;
     }
 
@@ -182,6 +202,9 @@ public class OrderService {
                 );
 
         if (order.getStatus() == status) return order;
+        boolean collection = "COLLECTION".equals(order.getFulfilment());
+        if ((collection && status == OrderStatus.SHIPPED) || (!collection && status == OrderStatus.READY_FOR_COLLECTION))
+            throw new IllegalArgumentException("This status does not match the order fulfilment method.");
         if (!order.getStatus().nextStatuses().contains(status)) {
             throw new ResourceConflictException("Cannot change an order from " + order.getStatus() + " to " + status + ".", null);
         }
@@ -197,6 +220,17 @@ public class OrderService {
         }
         order.setStatus(status);
 
-        return orderRepository.save(order);
+        order=orderRepository.save(order);
+        notifyCustomer(order, "Order status updated");
+        return order;
+    }
+    private void notifyCustomer(Order order,String heading) {
+        String method=order.getFulfilment()==null?"Not recorded":order.getFulfilment();
+        String subject="Mustafa Hardware — order #"+order.getOrderId()+" "+order.getStatus().name().replace('_',' ').toLowerCase(java.util.Locale.ROOT);
+        String body=heading+"\nOrder #"+order.getOrderId()+"\nStatus: "+order.getStatus().name().replace('_',' ')
+            +"\nFulfilment: "+method+"\nDelivery fee: Rs. "+order.getDeliveryFee()+"\nTotal: Rs. "+order.getTotalAmount()
+            +(order.getStatus()==OrderStatus.READY_FOR_COLLECTION?"\nYour order is ready. Contact the store to arrange collection.":"")
+            +"\nSign in to Mustafa Hardware to view your order items. No online payment is recorded by this message.";
+        notifications.sendOrder(order.getCustomer().getEmail(),subject,body);
     }
 }

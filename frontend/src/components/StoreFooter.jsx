@@ -18,7 +18,7 @@ export default function StoreFooter({ brand, categories = [], user }) {
       </nav>
       <nav className="footer-links" aria-labelledby="footer-account-title">
         <h2 id="footer-account-title">Customer care</h2>
-        <Link to={user ? "/orders" : "/login"}>My account</Link><Link to="/orders">Track your orders</Link>
+        <Link to={user ? "/account" : "/login"}>My account</Link><Link to="/orders">Track your orders</Link>
         {!user && <Link to="/register">Create an account</Link>}
       </nav>
       <nav className="footer-links" aria-labelledby="footer-departments-title">

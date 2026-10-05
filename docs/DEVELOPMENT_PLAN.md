@@ -16,13 +16,22 @@ The user develops all three historical SE2012 domains personally in this fork: c
 10. Code-aligned requirements, four workflow scenarios and editable UML sources.
 11. Production configuration, database upgrade scripts, health endpoint and container definitions.
 
-Each increment has a focused local commit. The user authorized continuing and pushing increments without repeated approval on 2 October. Hosting execution still requires an actual deployment target; no hosted URL is claimed.
+12. Registration email verification and forgotten-password recovery.
+13. Backend catalogue pagination, search and filters.
+14. Delivery/collection checkout, LKR 249 delivery, free collection and order review.
+15. Account profile/password changes and owned saved addresses.
+16. Validated admin product image uploads with persistent storage.
+17. Admin order/delivered-value/low-stock dashboard.
+18. Order emails after commit and collection readiness status.
+19. Login throttling, HTTPS deployment overlay, local production validation and a verified database restore.
+
+Each increment has a focused commit. The user authorized continuing and pushing increments without repeated approval on 2 October. Hosting execution still requires an actual deployment target; no hosted URL is claimed.
 
 ## Remaining evidence / business decisions
 
-- Actual container and hosted deployment, HTTPS, uptime and backup restore checks.
+- Actual container and hosted deployment, HTTPS and uptime checks. Local database backup/restore is verified; image-volume restore remains to be exercised in Docker.
 - Representative user study, full browser/device matrix and load testing against agreed targets.
-- Client decisions on delivery/collection, payment handling, refunds, cancellation and repricing. Current transition/cancellation policy is provisional and documented.
+- Client decisions on payment handling, refunds, cancellation and repricing. The user approved delivery/collection and the LKR 249/free fees. Current transition/cancellation policy is provisional and documented.
 - Lecturer exception for the original three-member team, client meeting evidence, course deadlines and actual assessment submission are not established by this fork.
 
 Real payment gateways, GPS tracking, AI recommendations, multi-vendor selling and live chat were excluded by the supplied scope. Separate SE2032 schema drafts are not application migrations.
