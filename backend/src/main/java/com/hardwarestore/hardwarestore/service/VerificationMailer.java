@@ -12,8 +12,9 @@ import org.springframework.http.HttpStatus;
 public class VerificationMailer {
     private final JavaMailSenderImpl sender;
     private final String from;
-    public VerificationMailer(JavaMailSenderImpl sender, @Value("${store.mail.from:}") String from) {
-        this.sender = sender; this.from = from;
+    private final CloudDeliveryClient cloud;
+    public VerificationMailer(JavaMailSenderImpl sender, @Value("${store.mail.from:}") String from, CloudDeliveryClient cloud) {
+        this.sender = sender; this.from = from; this.cloud = cloud;
     }
     public void sendCode(String email, String code) {
         send(email, code, "registration", "verify your email");
@@ -33,6 +34,7 @@ public class VerificationMailer {
                 + "\nIf you did not request this, ignore this email. Your password has not been changed.");
     }
     private void deliver(String email, String subject, String body) {
+        if (cloud.usesEmailApi()) { cloud.sendEmail(email, subject, body); return; }
         if (from.isBlank() || sender.getUsername() == null || sender.getUsername().isBlank()
                 || sender.getPassword() == null || sender.getPassword().isBlank()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,

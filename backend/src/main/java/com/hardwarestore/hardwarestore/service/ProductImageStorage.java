@@ -8,7 +8,10 @@ import javax.imageio.ImageIO;
 import java.util.UUID;
 @Service public class ProductImageStorage {
  private final Path directory;
- public ProductImageStorage(@Value("${store.upload-dir:uploads}") String directory){this.directory=Path.of(directory).toAbsolutePath().normalize();}
+ private final CloudDeliveryClient cloud;
+ @org.springframework.beans.factory.annotation.Autowired
+ public ProductImageStorage(@Value("${store.upload-dir:uploads}") String directory, CloudDeliveryClient cloud){this.directory=Path.of(directory).toAbsolutePath().normalize();this.cloud=cloud;}
+ public ProductImageStorage(String directory){this(directory,null);}
  public String store(MultipartFile file) {
   if(file.isEmpty()||file.getSize()>5*1024*1024)throw new IllegalArgumentException("Choose a JPEG or PNG image up to 5 MB.");
   try(var input=ImageIO.createImageInputStream(file.getInputStream())) {
@@ -19,7 +22,13 @@ import java.util.UUID;
     if(!java.util.Set.of("JPEG","PNG").contains(reader.getFormatName().toUpperCase(java.util.Locale.ROOT)))throw new IllegalArgumentException("Only JPEG and PNG images are accepted.");
     reader.setInput(input);
     if((long)reader.getWidth(0)*reader.getHeight(0)>20000000)throw new IllegalArgumentException("Image dimensions are too large.");
-    var image=reader.read(0);Files.createDirectories(directory);String name=UUID.randomUUID()+".png";
+    var image=reader.read(0);
+    if(cloud!=null && cloud.usesCloudImages()) {
+     var png=new ByteArrayOutputStream();ImageIO.write(image,"png",png);
+     if(png.size()>5*1024*1024)throw new IllegalArgumentException("The decoded image is too large. Choose a smaller image.");
+     return cloud.uploadImage(png.toByteArray());
+    }
+    Files.createDirectories(directory);String name=UUID.randomUUID()+".png";
     // Decode and re-encode to discard metadata and arbitrary appended payloads.
     ImageIO.write(image,"png",directory.resolve(name).toFile());return "/api/media/"+name;
    } finally {reader.dispose();}
