@@ -41,6 +41,7 @@ From `frontend`: `npm run build` and `npm run lint`.
 - [Four main workflows](docs/WORKFLOWS.md)
 - [Verification evidence](docs/VERIFICATION.md)
 - [Deployment and database upgrades](docs/DEPLOYMENT.md)
+- [Free demo hosting walkthrough](docs/FREE_HOSTING.md)
 - [Development plan](docs/DEVELOPMENT_PLAN.md)
 - Editable UML sources: `docs/uml/` (PlantUML).
 

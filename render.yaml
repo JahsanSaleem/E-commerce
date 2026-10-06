@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: mustafa-hardware
+    runtime: docker
+    plan: free
+    branch: new-ui
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 10000
+      - key: DB_URL
+        sync: false
+      - key: AIVEN_TRUSTSTORE_BASE64
+        sync: false
+      - key: AIVEN_TRUSTSTORE_PASSWORD
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+        value: 3
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: MAIL_PROVIDER
+        value: brevo-api
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: IMAGE_PROVIDER
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GOOGLE_LOGIN_ENABLED
+        value: "false"
+      - key: BOOTSTRAP_ADMIN_ENABLED
+        value: "false"

@@ -16,3 +16,7 @@ backend/src/main/resources/application-local.properties
 backend/uploads/
 uploads/
 backups/
+
+# Local Aiven certificate truststores
+*.p12
+ca.pem

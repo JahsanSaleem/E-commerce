@@ -1,0 +1,12 @@
+.git
+**/node_modules
+**/target
+**/dist
+**/uploads
+backups
+.env
+.env.*
+**/application-local.properties
+**/.Rhistory
+**/*.p12
+**/ca.pem

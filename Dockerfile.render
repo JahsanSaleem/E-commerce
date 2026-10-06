@@ -1,0 +1,23 @@
+FROM node:24-alpine AS frontend
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+ENV VITE_API_BASE_URL=""
+RUN npm run build
+
+FROM eclipse-temurin:17-jdk AS backend
+WORKDIR /backend
+COPY backend/ ./
+COPY --from=frontend /frontend/dist/ ./src/main/resources/static/
+RUN chmod +x mvnw && ./mvnw -B -DskipTests package
+
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=backend /backend/target/hardware-store-0.0.1-SNAPSHOT.jar ./app.jar
+COPY deploy/render-start.sh /app/start.sh
+RUN chmod 755 /app/start.sh
+USER 10001
+ENV JAVA_TOOL_OPTIONS="-Xmx192m -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:+UseSerialGC"
+EXPOSE 10000
+ENTRYPOINT ["/app/start.sh"]
